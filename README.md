@@ -13,7 +13,7 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/codicent-cli.git
+   git clone https://github.com/izaxon/codicent-cli.git
    cd codicent-cli
    ```
 
