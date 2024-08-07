@@ -39,6 +39,12 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
    codicent "What can you help me with?"
    ```
 
+3. You can also pipe a file into `codicent`:
+   ```sh
+   codicent < chat.txt
+   cat chat.txt | codicent
+   ```
+
 ## Example
 
 ```sh

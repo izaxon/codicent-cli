@@ -11,10 +11,14 @@ def main():
         return
 
     if len(sys.argv) < 2:
-        print("Usage: codicent <question>")
-        return
+        if sys.stdin.isatty():
+            print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent")
+            return
+        else:
+            question = sys.stdin.read().strip()
+    else:
+        question = " ".join(sys.argv[1:])
 
-    question = " ".join(sys.argv[1:])
     codicent = Codicent(token)
 
     reply = codicent.get_chat_reply(question)
