@@ -21,10 +21,14 @@ def main():
 
     codicent = Codicent(token)
 
-    reply = codicent.get_chat_reply(question)
-    
-    console = Console()
-    console.print(Markdown(reply))
+    if question.strip().startswith("@"):
+        response = codicent.post_message(question, type="info")
+        console = Console()
+        console.print("Message posted successfully.")
+    else:
+        response = codicent.get_chat_reply(question)
+        console = Console()
+        console.print(Markdown(response))
 
 if __name__ == "__main__":
     main()

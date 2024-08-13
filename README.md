@@ -45,11 +45,17 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
    cat chat.txt | codicent
    ```
 
+4. If your input starts with a mention (starting with character @), the post message function of Codicent API will be called:
+   ```sh
+   codicent "@mention Hello, this is a test message."
+   ```
+
 ## Example
 
 ```sh
 $ export CODICENT_TOKEN="your_api_token"
 $ codicent "What can you help me with?"
+$ codicent "@mention Hello, this is a test message."
 ```
 
 ## Development
