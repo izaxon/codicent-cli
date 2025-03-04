@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
 
 setup(
     name='codicent',
-    version='0.4',
+    version='0.4.2',
     py_modules=['app'],
     install_requires=required,
     entry_points='''

@@ -33,7 +33,8 @@ def main():
         else: 
             question = ""
 
-    def handle_question(question, conversationId=conversationId):
+    def handle_question(question):
+        nonlocal conversationId
         if question.strip().startswith("@"):
             response = codicent.post_message(question, type="info")
             console = Console()
@@ -44,9 +45,10 @@ def main():
             with console.status("", spinner="dots"):
                 response = codicent.post_chat_reply(question, conversationId)
             conversationId = response["id"]
+            if interactive: console.print()
             console.print(Markdown(response["content"]))
-            console.print()
-    
+            console.print() 
+
     if question != "":
         handle_question(question)
     
