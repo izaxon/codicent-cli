@@ -16,11 +16,13 @@ def main():
     if "-t" in sys.argv:
         interactive = True
         sys.argv.remove("-t")
-
+    elif len(sys.argv) == 1:
+        interactive = True
+        
     if not interactive:
         if len(sys.argv) < 2:
             if sys.stdin.isatty():
-                print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent")
+                print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent or codicent (equal to codicent -t)")
                 return
             question = sys.stdin.read().strip()
         else:
