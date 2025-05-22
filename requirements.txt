@@ -1,2 +1,1 @@
 rich
-git+https://github.com/izaxon/codicent-py.git
