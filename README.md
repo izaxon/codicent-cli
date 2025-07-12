@@ -19,7 +19,16 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
 - Python 3.6 or higher
 - `pip` (Python package installer)
 
-### Steps
+### Quick Installation
+
+```bash
+# Install both dependencies with one command
+pip install git+https://github.com/izaxon/codicent-py.git git+https://github.com/izaxon/codicent-cli.git@v0.4.3
+```
+
+### Development Installation
+
+#### Steps
 
 1. Clone the repository:
    ```bash
@@ -41,6 +50,19 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
    ```bash
    pip install -e .
    ```
+
+### Direct Installation from GitHub
+
+You can also install directly from GitHub without cloning:
+
+```bash
+# Install the latest release
+pip install git+https://github.com/izaxon/codicent-py.git
+pip install git+https://github.com/izaxon/codicent-cli.git
+
+# Install a specific version
+pip install git+https://github.com/izaxon/codicent-cli.git@v0.4.3
+```
 
 ## Usage
 
