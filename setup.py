@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='codicent',
-    version='0.4.2',
+    version='0.4.3',
     py_modules=['app'],
     install_requires=[
         'rich',
