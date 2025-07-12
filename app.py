@@ -140,10 +140,6 @@ def main():
         
         console = Console()
         
-        # Show user message in cyan color for interactive mode
-        if interactive:
-            console.print(f"[cyan]{question}[/cyan]")
-        
         try:
             if question.strip().startswith("@"):
                 logger.info("Sending message to Codicent API")
