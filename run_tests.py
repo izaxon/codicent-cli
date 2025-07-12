@@ -52,7 +52,7 @@ def run_version_test():
     try:
         result = subprocess.run([sys.executable, "app.py", "--version"], 
                               capture_output=True, text=True, cwd=os.path.dirname(__file__))
-        if result.returncode == 0 and "v0.4.2" in result.stdout:
+        if result.returncode == 0 and "v0.4.3" in result.stdout:
             print("✅ Version functionality works")
             return True
         else:
