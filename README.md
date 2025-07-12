@@ -1,6 +1,16 @@
 # Codicent CLI
 
-Codicent CLI is a command-line interface for interacting with the Codicent API. It allows you to send questions to the Codicent chat and receive formatted responses.
+Codicent CLI is a command-line interface for interacting with the Codicent API. It provides both one-shot command execution and interactive chat sessions with comprehensive error handling and user-friendly features.
+
+## Features
+
+- **One-shot mode**: Execute single commands and get responses
+- **Interactive mode**: Continuous chat sessions with conversation tracking
+- **Message types**: Support for regular chat and @-prefixed info messages
+- **Input flexibility**: Command arguments, stdin pipes, or interactive prompts
+- **Rich output**: Markdown-formatted responses with beautiful terminal UI
+- **Error handling**: Comprehensive error messages and graceful failure handling
+- **Logging**: Configurable logging levels for debugging
 
 ## Installation
 
@@ -12,115 +22,156 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
 ### Steps
 
 1. Clone the repository:
-   ```sh
+   ```bash
    git clone https://github.com/izaxon/codicent-cli.git
    cd codicent-cli
    ```
 
 2. Install the Git dependency:
-   ```sh
+   ```bash
    pip install git+https://github.com/izaxon/codicent-py.git
    ```
 
 3. Install the CLI application:
-   ```sh
+   ```bash
    pip install .
+   ```
+
+   For development mode:
+   ```bash
+   pip install -e .
    ```
 
 ## Usage
 
+### Basic Setup
+
 1. Set the `CODICENT_TOKEN` environment variable with your Codicent API token:
-   ```sh
+   ```bash
    export CODICENT_TOKEN="YOUR_API_TOKEN"
    ```
 
-2. Run the CLI command with your question:
-   ```sh
-   codicent "What can you help me with?"
-   ```
+### Command Options
 
-3. You can also pipe a file into `codicent`:
-   ```sh
-   codicent < chat.txt
-   cat chat.txt | codicent
-   ```
-
-4. If your input starts with a mention (starting with character @), the post message function of Codicent API will be called:
-   ```sh
-   codicent "@mention Hello, this is a test message."
-   ```
-
-## Example
-
-```sh
-$ export CODICENT_TOKEN="your_api_token"
-$ codicent "What can you help me with?"
-$ codicent "@mention Hello, this is a test message."
 ```
+codicent [OPTIONS] [QUESTION]
+
+OPTIONS:
+  -t, --interactive    Start interactive chat mode
+  -h, --help          Show help message
+  -v, --version       Show version information
+  --verbose           Enable verbose logging
+  --quiet             Suppress non-essential output
+```
+
+### Examples
+
+**One-shot questions:**
+```bash
+codicent "What can you help me with?"
+codicent "Explain Python decorators"
+```
+
+**Interactive mode:**
+```bash
+codicent -t
+# or
+codicent --interactive
+```
+
+**Piped input:**
+```bash
+echo "What is machine learning?" | codicent
+codicent < questions.txt
+cat code.py | codicent "Review this code"
+```
+
+**Info messages (@ prefix):**
+```bash
+codicent "@mention This is an info message"
+```
+
+**With logging:**
+```bash
+codicent --verbose "Debug this issue"
+codicent --quiet "Silent operation"
+```
+
+## Interactive Mode
+
+In interactive mode, you can have ongoing conversations:
+
+```
+$ codicent -t
+Codicent CLI Interactive Mode
+Type your questions or use Ctrl+C to exit.
+Prefix with @ for info messages.
+
+¤ What is Python?
+[Response with conversation context preserved]
+
+¤ Can you give me an example?
+[Follow-up response using conversation history]
+
+¤ @mention Save this conversation
+Message posted successfully.
+
+¤ ^C
+Goodbye!
+```
+
+## Error Handling
+
+The CLI provides helpful error messages for common issues:
+
+- **Missing token**: Clear instructions on setting up `CODICENT_TOKEN`
+- **Network errors**: Graceful handling of connection issues
+- **API errors**: Detailed error messages from the Codicent API
+- **Input validation**: Prevents empty or overly long inputs
+- **Keyboard interrupts**: Clean exit handling
 
 ## Development
 
-### Requirements
+### Running Tests
 
-- `setuptools`
-- `rich`
+```bash
+python -m pytest test_app.py -v
+```
 
-### Setup
+### Project Structure
 
-1. Create a `requirements.txt` file with the following content:
-   ```txt
-   rich
-   ```
+- `app.py` - Main application logic (single-file architecture)
+- `test_app.py` - Comprehensive test suite
+- `setup.py` - Package configuration
+- `requirements.txt` - Dependencies including git packages
 
-2. Create a `setup.py` file with the following content:
-   ```python
-   from setuptools import setup, find_packages
+### Dependencies
 
-   with open("requirements.txt") as f:
-       required = f.read().splitlines()
+- **codicentpy**: Core API client for Codicent services
+- **rich**: Terminal formatting, markdown rendering, and animations
 
-   setup(
-       name='codicent-cli',
-       version='0.1',
-       py_modules=['app'],
-       install_requires=required,
-       entry_points={
-           'console_scripts': [
-               'codicent=app:main',
-           ],
-       },
-   )
-   ```
+## Troubleshooting
 
-3. Create an `app.py` file with the following content:
-   ```python
-   import sys
-   import os
-   from codicentpy import Codicent
-   from rich.console import Console
-   from rich.markdown import Markdown
+### Common Issues
 
-   def main():
-       token = os.getenv("CODICENT_TOKEN")
-       if not token:
-           print("Error: Please set the CODICENT_TOKEN environment variable.")
-           return
+1. **"CODICENT_TOKEN environment variable is not set"**
+   - Set the token: `export CODICENT_TOKEN="your_token"`
+   - Verify it's set: `echo $CODICENT_TOKEN`
 
-       if len(sys.argv) < 2:
-           print("Usage: codicent <question>")
-           return
+2. **"Network error: Unable to connect to Codicent API"**
+   - Check your internet connection
+   - Verify the Codicent API is accessible
+   - Try again with `--verbose` for more details
 
-       question = " ".join(sys.argv[1:])
-       codicent = Codicent(token)
+3. **"Failed to initialize Codicent API client"**
+   - Verify your token is valid
+   - Check if the codicentpy package is properly installed
 
-       reply = codicent.get_chat_reply(question)
-       
-       console = Console()
-       console.print(Markdown(reply))
+### Getting Help
 
-   if __name__ == "__main__":
-       main()
-   ```
+- Use `codicent --help` for usage information
+- Use `codicent --verbose` for detailed logging
+- Check the [Codicent documentation](https://github.com/izaxon/codicent-py) for API details
 
 ## License
 

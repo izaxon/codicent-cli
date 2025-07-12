@@ -1,69 +1,203 @@
 import sys
 import os
+import logging
 from codicentpy import Codicent
 from rich.console import Console
 from rich.markdown import Markdown
 
+# Configure logging
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+def show_help():
+    """Display help information."""
+    help_text = """
+Codicent CLI - Command-line interface for the Codicent API
+
+USAGE:
+    codicent [OPTIONS] [QUESTION]
+    codicent [OPTIONS] < file.txt
+    echo "question" | codicent [OPTIONS]
+
+OPTIONS:
+    -t, --interactive    Start interactive chat mode
+    -h, --help          Show this help message
+    -v, --version       Show version information
+    --verbose           Enable verbose logging
+    --quiet             Suppress non-essential output
+
+EXAMPLES:
+    codicent "What is Python?"
+    codicent -t
+    codicent "@mention Hello there"
+    echo "Help me debug this" | codicent
+
+ENVIRONMENT:
+    CODICENT_TOKEN     Your Codicent API token (required)
+
+For more information, visit: https://github.com/izaxon/codicent-cli
+"""
+    print(help_text.strip())
+
+def show_version():
+    """Display version information."""
+    print("Codicent CLI v0.4.2")
+
+def validate_input(question):
+    """Validate user input."""
+    if not question or not question.strip():
+        return False, "Empty question provided"
+    
+    if len(question) > 10000:  # Reasonable limit
+        return False, "Question too long (max 10,000 characters)"
+    
+    return True, None
+
 def main():
+    # Parse command line arguments
+    if "-h" in sys.argv or "--help" in sys.argv:
+        show_help()
+        return 0
+    
+    if "-v" in sys.argv or "--version" in sys.argv:
+        show_version()
+        return 0
+    
+    # Set logging level based on flags
+    if "--verbose" in sys.argv:
+        logging.getLogger().setLevel(logging.INFO)
+        sys.argv.remove("--verbose")
+        logger.info("Verbose logging enabled")
+    
+    if "--quiet" in sys.argv:
+        logging.getLogger().setLevel(logging.ERROR)
+        sys.argv.remove("--quiet")
+    
+    # Validate environment
     token = os.getenv("CODICENT_TOKEN")
     if not token:
-        print("Error: Please set the CODICENT_TOKEN environment variable.")
-        return
-    codicent = Codicent(token)
+        print("Error: CODICENT_TOKEN environment variable is not set.")
+        print("Please set it with your Codicent API token:")
+        print("  export CODICENT_TOKEN='your_token_here'")
+        print("Or visit the Codicent documentation for setup instructions.")
+        return 1
+    
+    # Initialize API client with error handling
+    try:
+        codicent = Codicent(token)
+        logger.info("Codicent API client initialized successfully")
+    except Exception as e:
+        print(f"Error: Failed to initialize Codicent API client: {e}")
+        logger.error(f"API client initialization failed: {e}")
+        return 1
+    
     conversationId = None
 
+    # Parse interactive mode flags
     interactive = False
-    if "-t" in sys.argv:
+    if "-t" in sys.argv or "--interactive" in sys.argv:
         interactive = True
-        sys.argv.remove("-t")
+        if "-t" in sys.argv:
+            sys.argv.remove("-t")
+        if "--interactive" in sys.argv:
+            sys.argv.remove("--interactive")
     elif len(sys.argv) == 1:
         interactive = True
         
+    # Get input based on mode
     if not interactive:
         if len(sys.argv) < 2:
             if sys.stdin.isatty():
                 print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent or codicent (equal to codicent -t)")
-                return
-            question = sys.stdin.read().strip()
+                print("Use 'codicent --help' for more information.")
+                return 1
+            try:
+                question = sys.stdin.read().strip()
+            except (KeyboardInterrupt, EOFError):
+                return 1
         else:
             question = " ".join(sys.argv[1:])
     else:
         if len(sys.argv) > 1:
             question = " ".join(sys.argv[1:])
         elif not sys.stdin.isatty():
-            question = sys.stdin.read().strip()
+            try:
+                question = sys.stdin.read().strip()
+            except (KeyboardInterrupt, EOFError):
+                return 1
         else: 
             question = ""
 
     def handle_question(question):
         nonlocal conversationId
-        if question.strip().startswith("@"):
-            response = codicent.post_message(question, type="info")
-            console = Console()
-            console.print("Message posted successfully.")
-        else:
-            console = Console()
-            # Wrap the call in a spinner animation.
-            with console.status("", spinner="dots"):
-                response = codicent.post_chat_reply(question, conversationId)
-            conversationId = response["id"]
-            if interactive: console.print()
-            console.print(Markdown(response["content"]))
-            console.print() 
+        
+        # Validate input
+        is_valid, error_msg = validate_input(question)
+        if not is_valid:
+            print(f"Error: {error_msg}")
+            logger.warning(f"Invalid input: {error_msg}")
+            return False
+        
+        console = Console()
+        
+        try:
+            if question.strip().startswith("@"):
+                logger.info("Sending message to Codicent API")
+                with console.status("Sending message...", spinner="dots"):
+                    response = codicent.post_message(question, type="info")
+                console.print("Message posted successfully.")
+            else:
+                logger.info("Sending chat reply to Codicent API")
+                with console.status("", spinner="dots"):
+                    response = codicent.post_chat_reply(question, conversationId)
+                conversationId = response["id"]
+                logger.info(f"Updated conversation ID: {conversationId}")
+                
+                if interactive: 
+                    console.print()
+                console.print(Markdown(response["content"]))
+                console.print()
+            
+            return True
+            
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Operation cancelled by user[/yellow]")
+            return False
+        except ConnectionError as e:
+            console.print(f"[red]Network error: Unable to connect to Codicent API[/red]")
+            logger.error(f"Connection error: {e}")
+            return False
+        except Exception as e:
+            console.print(f"[red]API error: {e}[/red]")
+            logger.error(f"API call failed: {e}")
+            return False
 
+    # Handle initial question if provided
     if question != "":
-        handle_question(question)
+        success = handle_question(question)
+        if not success and not interactive:
+            return 1
     
+    # Interactive mode loop
     if interactive:
+        console = Console()
+        console.print("[bold green]Codicent CLI Interactive Mode[/bold green]")
+        console.print("Type your questions or use Ctrl+C to exit.")
+        console.print("Prefix with @ for info messages.\n")
+        
         while True:
             try:
                 question = input("¤ ")
             except KeyboardInterrupt:
+                console.print("\n[yellow]Goodbye![/yellow]")
                 break
             except EOFError:
                 break
+            
             if question.strip() != "":
                 handle_question(question)
+    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
