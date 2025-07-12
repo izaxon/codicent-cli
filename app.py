@@ -140,22 +140,31 @@ def main():
         
         console = Console()
         
+        # Show user message in cyan color for interactive mode
+        if interactive:
+            console.print(f"[cyan]{question}[/cyan]")
+        
         try:
             if question.strip().startswith("@"):
                 logger.info("Sending message to Codicent API")
-                with console.status("Sending message...", spinner="dots"):
+                with console.status("[dim]Sending message...[/dim]", spinner="dots"):
                     response = codicent.post_message(question, type="info")
-                console.print("Message posted successfully.")
+                console.print("[green]✅ Message posted successfully.[/green]")
             else:
                 logger.info("Sending chat reply to Codicent API")
-                with console.status("", spinner="dots"):
+                with console.status("[dim]🤔 Thinking...[/dim]", spinner="dots"):
                     response = codicent.post_chat_reply(question, conversationId)
                 conversationId = response["id"]
                 logger.info(f"Updated conversation ID: {conversationId}")
                 
-                if interactive: 
+                # Show bot response with markdown formatting in green
+                if interactive:
                     console.print()
-                console.print(Markdown(response["content"]))
+                
+                # Create markdown with green styling
+                from rich.text import Text
+                markdown_content = Markdown(response["content"])
+                console.print(markdown_content, style="green")
                 console.print()
             
             return True
@@ -181,21 +190,25 @@ def main():
     # Interactive mode loop
     if interactive:
         console = Console()
-        console.print("[bold green]Codicent CLI Interactive Mode[/bold green]")
-        console.print("Type your questions or use Ctrl+C to exit.")
-        console.print("Prefix with @ for info messages.\n")
+        console.print("\n[bold green]🤖 Codicent CLI Interactive Mode[/bold green]")
+        console.print("[dim]Type your questions or use Ctrl+C to exit.[/dim]")
+        console.print("[dim]Prefix with @ for info messages.[/dim]")
+        console.print("─" * 50)
         
         while True:
             try:
                 question = input("¤ ")
             except KeyboardInterrupt:
-                console.print("\n[yellow]Goodbye![/yellow]")
+                console.print("\n[yellow]👋 Goodbye![/yellow]")
                 break
             except EOFError:
                 break
             
             if question.strip() != "":
                 handle_question(question)
+                # Add a separator line after each interaction
+                if question.strip() != "" and not question.strip().startswith("@"):
+                    console.print("[dim]" + "─" * 50 + "[/dim]")
     
     return 0
 

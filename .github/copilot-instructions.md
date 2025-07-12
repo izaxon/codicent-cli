@@ -73,7 +73,10 @@ echo "test" | codicent
 ### UI/UX Patterns
 - **Loading feedback**: Spinner animation during API calls using `rich.console.status`
 - **Markdown rendering**: All API responses rendered as markdown via `rich.Markdown`
-- **Interactive prompt**: Custom prompt character `¤` for brand consistency
+- **Interactive prompt**: Traditional `¤` prompt with colored user input (cyan) and bot responses (green)
+- **Visual separators**: Separator lines between conversations for clarity
+- **Status indicators**: Emojis and colored messages for different states
+- **Error formatting**: Color-coded error messages (red for errors, yellow for warnings)
 
 ## Integration Points
 

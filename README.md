@@ -99,26 +99,54 @@ codicent --quiet "Silent operation"
 
 ## Interactive Mode
 
-In interactive mode, you can have ongoing conversations:
+In interactive mode, you can have ongoing conversations with enhanced visual clarity:
 
 ```
 $ codicent -t
-Codicent CLI Interactive Mode
+🤖 Codicent CLI Interactive Mode
 Type your questions or use Ctrl+C to exit.
 Prefix with @ for info messages.
-
+──────────────────────────────────────────────────
 ¤ What is Python?
-[Response with conversation context preserved]
 
+Python is a high-level, interpreted programming language known for its 
+simplicity and readability. It was created by Guido van Rossum and first 
+released in 1991.
+
+Key features:
+• Easy to learn and use
+• Extensive standard library
+• Cross-platform compatibility
+• Strong community support
+──────────────────────────────────────────────────
 ¤ Can you give me an example?
-[Follow-up response using conversation history]
 
+Here's a simple Python example:
+
+# Hello World in Python
+print("Hello, World!")
+
+# Working with variables
+name = "Alice"
+age = 25
+print(f"My name is {name} and I am {age} years old.")
+
+Python's syntax is clean and intuitive!
+──────────────────────────────────────────────────
 ¤ @mention Save this conversation
-Message posted successfully.
-
+✅ Message posted successfully.
+──────────────────────────────────────────────────
 ¤ ^C
-Goodbye!
+👋 Goodbye!
 ```
+
+**Visual Features:**
+- **Colored messages**: User input appears in cyan, bot responses in green
+- **Clean prompting**: Original `¤` prompt character maintained
+- **Visual separators**: Clear lines between conversations
+- **Rich formatting**: Markdown responses with syntax highlighting
+- **Status indicators**: Animated thinking indicators and success messages
+- **Emojis**: Friendly visual cues throughout the interface
 
 ## Error Handling
 
