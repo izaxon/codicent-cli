@@ -9,7 +9,7 @@ except FileNotFoundError:
 
 setup(
     name='codicent-cli',
-    version='0.4.3',
+    version='0.4.4',
     author='Johan Isaksson',
     author_email='johan@izaxon.com',
     description='Command-line interface for the Codicent API',
@@ -39,7 +39,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'rich',
-        # Note: codicentpy must be installed separately from GitHub
+        'codicent-py',
     ],
     entry_points={
         'console_scripts': [

@@ -22,8 +22,8 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
 ### Quick Installation
 
 ```bash
-# Install both dependencies with one command
-pip install git+https://github.com/izaxon/codicent-py.git git+https://github.com/izaxon/codicent-cli.git@v0.4.3
+# Install from PyPI
+pip install codicent-py codicent-cli
 ```
 
 ### Development Installation
@@ -36,32 +36,21 @@ pip install git+https://github.com/izaxon/codicent-py.git git+https://github.com
    cd codicent-cli
    ```
 
-2. Install the Git dependency:
-   ```bash
-   pip install git+https://github.com/izaxon/codicent-py.git
-   ```
-
-3. Install the CLI application:
-   ```bash
-   pip install .
-   ```
-
-   For development mode:
+2. Install in development mode:
    ```bash
    pip install -e .
    ```
 
 ### Direct Installation from GitHub
 
-You can also install directly from GitHub without cloning:
+You can also install directly from GitHub:
 
 ```bash
-# Install the latest release
-pip install git+https://github.com/izaxon/codicent-py.git
+# Install the latest version
 pip install git+https://github.com/izaxon/codicent-cli.git
 
 # Install a specific version
-pip install git+https://github.com/izaxon/codicent-cli.git@v0.4.3
+pip install git+https://github.com/izaxon/codicent-cli.git@v0.4.4
 ```
 
 ## Usage
@@ -193,11 +182,11 @@ python -m pytest test_app.py -v
 - `app.py` - Main application logic (single-file architecture)
 - `test_app.py` - Comprehensive test suite
 - `setup.py` - Package configuration
-- `requirements.txt` - Dependencies including git packages
+- `requirements.txt` - Dependencies (now uses PyPI packages)
 
 ### Dependencies
 
-- **codicentpy**: Core API client for Codicent services
+- **codicent-py**: Core API client for Codicent services (now available on PyPI)
 - **rich**: Terminal formatting, markdown rendering, and animations
 
 ## Troubleshooting
@@ -215,7 +204,7 @@ python -m pytest test_app.py -v
 
 3. **"Failed to initialize Codicent API client"**
    - Verify your token is valid
-   - Check if the codicentpy package is properly installed
+   - Check if the codicent-py package is properly installed
 
 ### Getting Help
 
