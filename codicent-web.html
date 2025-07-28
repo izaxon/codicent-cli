@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codicent Web Console Chat</title>
+    <style>
+      body {
+        background: #181818;
+        color: #e0e0e0;
+        font-family: "Fira Mono", "Consolas", "Monaco", monospace;
+        margin: 0;
+        padding: 20px;
+        line-height: 1.4;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #222;
+        border-radius: 8px;
+        box-shadow: 0 0 20px #000;
+        padding: 24px;
+        min-height: 600px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #444;
+      }
+
+      .header h1 {
+        color: #00ff88;
+        margin: 0 0 10px 0;
+        font-size: 1.5em;
+      }
+
+      .header p {
+        color: #888;
+        margin: 0;
+        font-size: 0.9em;
+      }
+
+      #chat {
+        min-height: 400px;
+        margin-bottom: 20px;
+        overflow-y: auto;
+        max-height: 500px;
+      }
+
+      .separator {
+        border-top: 1px solid #444;
+        margin: 16px 0;
+      }
+
+      .message {
+        margin: 8px 0;
+        word-wrap: break-word;
+      }
+
+      .user {
+        color: #00bfff;
+        font-weight: bold;
+      }
+
+      .bot {
+        color: #00ff88;
+        margin-left: 0;
+      }
+
+      .bot .markdown {
+        margin: 8px 0 8px 0;
+        color: #e0e0e0;
+      }
+
+      .bot .markdown h1,
+      .bot .markdown h2,
+      .bot .markdown h3 {
+        color: #00ff88;
+        margin: 16px 0 8px 0;
+      }
+
+      .bot .markdown p {
+        margin: 8px 0;
+      }
+
+      .bot .markdown pre {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 4px;
+        padding: 12px;
+        overflow-x: auto;
+        color: #f8f8f2;
+      }
+
+      .bot .markdown code {
+        background: #333;
+        padding: 2px 4px;
+        border-radius: 2px;
+        color: #f8f8f2;
+      }
+
+      .bot .markdown pre code {
+        background: none;
+        padding: 0;
+      }
+
+      .bot .markdown ul,
+      .bot .markdown ol {
+        margin: 8px 0 8px 20px;
+      }
+
+      .bot .markdown blockquote {
+        border-left: 3px solid #00ff88;
+        margin: 8px 0;
+        padding-left: 12px;
+        color: #ccc;
+      }
+
+      .error {
+        color: #ff4444;
+        font-weight: bold;
+      }
+
+      .status {
+        color: #ffd700;
+        font-weight: bold;
+      }
+
+      .success {
+        color: #00ff88;
+        font-weight: bold;
+      }
+
+      .setup-section {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+
+      .setup-section h3 {
+        color: #ffd700;
+        margin: 0 0 12px 0;
+      }
+
+      .setup-section input {
+        width: 100%;
+        background: #181818;
+        color: #e0e0e0;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 8px;
+        font-family: inherit;
+        font-size: 0.9em;
+      }
+
+      .setup-section button {
+        background: #00bfff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        margin-top: 8px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .setup-section button:hover {
+        background: #0099cc;
+      }
+
+      #inputRow {
+        display: flex;
+        align-items: center;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 8px;
+      }
+
+      .prompt {
+        color: #00bfff;
+        font-weight: bold;
+        margin-right: 8px;
+        font-size: 1.1em;
+      }
+
+      #input {
+        flex: 1;
+        background: transparent;
+        color: #e0e0e0;
+        border: none;
+        font-size: 1em;
+        font-family: inherit;
+        outline: none;
+      }
+
+      #sendBtn {
+        background: #00bfff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        margin-left: 12px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      #sendBtn:hover {
+        background: #0099cc;
+      }
+
+      #sendBtn:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+
+      #spinner {
+        display: none;
+        margin-left: 8px;
+        color: #ffd700;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🤖 Codicent Web Console Chat</h1>
+        <p>Interactive mode - Type your questions or prefix with @ for info messages</p>
+      </div>
+
+      <div id="setupSection" class="setup-section">
+        <h3>⚙️ Setup</h3>
+        <p style="color: #ccc; margin: 0 0 8px 0">Enter your Codicent API token:</p>
+        <input type="password" id="tokenInput" placeholder="API Token (required)" />
+        <button onclick="saveConfig()">Save Configuration</button>
+        <p style="color: #888; margin: 8px 0 0 0; font-size: 0.8em">
+          Your token must contain project information for chat functionality to work.
+        </p>
+      </div>
+
+      <div id="chat">
+        <div class="separator"></div>
+      </div>
+
+      <form id="inputRow" autocomplete="off">
+        <span class="prompt">¤</span>
+        <input id="input" type="text" placeholder="Type your question..." autofocus disabled />
+        <button id="sendBtn" type="submit" disabled>Send</button>
+        <span id="spinner">🤔</span>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      // --- Configuration State ---
+      let apiToken = localStorage.getItem("CODICENT_TOKEN") || "";
+      let conversationId = null;
+
+      // --- DOM Elements ---
+      const chat = document.getElementById("chat");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("sendBtn");
+      const spinner = document.getElementById("spinner");
+      const setupSection = document.getElementById("setupSection");
+      const tokenInput = document.getElementById("tokenInput");
+
+      // --- Initialize ---
+      function init() {
+        tokenInput.value = apiToken;
+
+        if (apiToken) {
+          setupSection.classList.add("hidden");
+          input.disabled = false;
+          sendBtn.disabled = false;
+          addMessage("status", "✅ Ready to chat! Configuration loaded.");
+        }
+      }
+
+      // --- Save Configuration ---
+      function saveConfig() {
+        const newToken = tokenInput.value.trim();
+
+        if (!newToken) {
+          addMessage("error", "❌ API Token is required");
+          return;
+        }
+
+        apiToken = newToken;
+        localStorage.setItem("CODICENT_TOKEN", apiToken);
+
+        setupSection.classList.add("hidden");
+        input.disabled = false;
+        sendBtn.disabled = false;
+
+        addMessage("success", "✅ Configuration saved! Ready to chat.");
+        addSeparator();
+      }
+
+      // --- Helper: Configure marked for better rendering ---
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+      });
+
+      // --- Helper: Render Markdown ---
+      function renderMarkdown(md) {
+        const html = marked.parse(md);
+        const div = document.createElement("div");
+        div.className = "markdown";
+        div.innerHTML = html;
+        return div;
+      }
+
+      // --- Helper: Add Message ---
+      function addMessage(role, text, isMarkdown = false) {
+        const msg = document.createElement("div");
+        msg.className = `message ${role}`;
+
+        if (isMarkdown && role === "bot") {
+          msg.appendChild(renderMarkdown(text));
+        } else {
+          msg.textContent = text;
+        }
+
+        chat.appendChild(msg);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      // --- Helper: Add Separator ---
+      function addSeparator() {
+        const sep = document.createElement("div");
+        sep.className = "separator";
+        chat.appendChild(sep);
+      }
+
+      // --- Codicent API Client (JavaScript port) ---
+      class CodicentAPI {
+        constructor(token, baseUrl = "https://codicent.com/") {
+          this.token = token;
+          this.baseUrl = baseUrl;
+        }
+
+        // Helper to get auth headers
+        getAuthHeaders() {
+          return {
+            Authorization: `Bearer ${this.token}`,
+            "Content-Type": "application/json",
+          };
+        }
+
+        // Helper to decode JWT and extract project
+        getProjectFromToken() {
+          try {
+            const payload = this.token.split(".")[1];
+            const paddedPayload = payload + "=".repeat(-payload.length % 4);
+            const decoded = atob(paddedPayload);
+            const jwtToken = JSON.parse(decoded);
+            return jwtToken.project;
+          } catch (e) {
+            console.error("Failed to decode token:", e);
+            return null;
+          }
+        }
+
+        // Post message (for @ messages)
+        async postMessage(message, parentId = null, type = "info") {
+          const url = `${this.baseUrl}app/AddChatMessage`;
+          const data = {
+            content: message,
+            type: type,
+            isNew: false,
+          };
+          if (parentId) {
+            data.parentId = parentId;
+          }
+
+          const response = await fetch(url, {
+            method: "POST",
+            headers: this.getAuthHeaders(),
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          return result.id;
+        }
+
+        // Post chat reply (for regular chat)
+        async postChatReply(message, conversationId = null) {
+          const url = `${this.baseUrl}app/GetAi2ChatReply`;
+          const project = this.getProjectFromToken();
+
+          if (!project) {
+            throw new Error("Could not extract project from token");
+          }
+
+          const data = {
+            message: message,
+            project: project,
+          };
+          if (conversationId) {
+            data.messageId = conversationId;
+          }
+
+          const response = await fetch(url, {
+            method: "POST",
+            headers: this.getAuthHeaders(),
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          return {
+            id: result.id,
+            content: result.content.replace(`@${project}`, "").trim(),
+          };
+        }
+      }
+
+      // --- API Call using real Codicent API ---
+      async function sendToCodicent(question) {
+        spinner.style.display = "inline";
+        sendBtn.disabled = true;
+
+        try {
+          if (!apiToken) {
+            throw new Error("API token is required. Please set it in the configuration.");
+          }
+
+          const codicent = new CodicentAPI(apiToken);
+          let response;
+
+          if (question.trim().startsWith("@")) {
+            // Info message
+            const messageId = await codicent.postMessage(question, null, "info");
+            addMessage("success", "✅ Message posted successfully.");
+          } else {
+            // Chat reply
+            response = await codicent.postChatReply(question, conversationId);
+
+            if (response.id) {
+              conversationId = response.id;
+            }
+
+            addMessage("bot", response.content || "[No response]", true);
+          }
+        } catch (e) {
+          addMessage("error", "❌ Error: " + e.message);
+        }
+
+        spinner.style.display = "none";
+        sendBtn.disabled = false;
+
+        if (!question.trim().startsWith("@")) {
+          addSeparator();
+        }
+      }
+
+      // --- Form Handler ---
+      document.getElementById("inputRow").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const question = input.value.trim();
+        if (!question || sendBtn.disabled) return;
+
+        addMessage("user", "¤ " + question, false);
+        input.value = "";
+        sendToCodicent(question);
+      });
+
+      // --- Allow Enter key in setup ---
+      tokenInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          saveConfig();
+        }
+      });
+
+      // --- Initialize on load ---
+      init();
+    </script>
+  </body>
+</html>
