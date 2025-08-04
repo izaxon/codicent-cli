@@ -4,6 +4,10 @@ import logging
 from codicentpy import Codicent
 from rich.console import Console
 from rich.markdown import Markdown
+from prompt_toolkit import prompt
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.filters import Condition
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
@@ -189,11 +193,31 @@ def main():
         console.print("\n[bold green]🤖 Codicent CLI Interactive Mode[/bold green]")
         console.print("[dim]Type your questions or use Ctrl+C to exit.[/dim]")
         console.print("[dim]Prefix with @ for info messages.[/dim]")
+        console.print("[dim]Enter: send | Alt+Enter: new line | Paste: multi-line supported[/dim]")
         console.print("─" * 50)
         
+        # Create custom key bindings
+        bindings = KeyBindings()
+
+        @bindings.add(Keys.Enter)
+        def _(event):
+            """Enter submits the input."""
+            event.current_buffer.validate_and_handle()
+
+        @bindings.add(Keys.Escape, Keys.Enter)  # Alt+Enter
+        def _(event):
+            """Alt+Enter inserts a newline."""
+            event.current_buffer.insert_text('\n')
+
         while True:
             try:
-                question = input("¤ ")
+                # Use prompt_toolkit's prompt instead of input()
+                question = prompt(
+                    "¤ ",
+                    multiline=True,
+                    key_bindings=bindings,
+                    prompt_continuation=""  # No continuation prompt for clean look
+                )
             except KeyboardInterrupt:
                 console.print("\n[yellow]👋 Goodbye![/yellow]")
                 break
