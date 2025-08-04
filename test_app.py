@@ -44,7 +44,7 @@ class TestCodicentCLI(unittest.TestCase):
         with patch('sys.stdout', new=StringIO()) as fake_out:
             app.show_version()
             output = fake_out.getvalue()
-            self.assertIn("Codicent CLI v0.4.4", output)
+            self.assertIn("Codicent CLI v0.4.5", output)
 
     def test_validate_input_valid(self):
         """Test input validation with valid input."""
