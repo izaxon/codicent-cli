@@ -40,6 +40,7 @@ setup(
     install_requires=[
         'rich',
         'codicent-py',
+        'prompt_toolkit' 
     ],
     entry_points={
         'console_scripts': [
