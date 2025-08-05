@@ -50,7 +50,7 @@ You can also install directly from GitHub:
 pip install git+https://github.com/izaxon/codicent-cli.git
 
 # Install a specific version
-pip install git+https://github.com/izaxon/codicent-cli.git@v0.4.5
+pip install git+https://github.com/izaxon/codicent-cli.git@v0.4.6
 ```
 
 ## Usage
