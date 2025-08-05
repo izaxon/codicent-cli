@@ -178,7 +178,7 @@ def main():
             return False
         except Exception as e:
             console.print(f"[red]API error: {e}[/red]")
-            logger.error(f"API call failed: {e}")
+            logger.error(f"API call failed (CODICENT_API_TOKEN expired?): {e}")
             return False
 
     # Handle initial question if provided
