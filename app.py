@@ -8,6 +8,7 @@ from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.filters import Condition
+from auth import CodicentAuth
 
 # Configure logging
 logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
@@ -30,14 +31,20 @@ OPTIONS:
     --verbose           Enable verbose logging
     --quiet             Suppress non-essential output
 
+AUTHENTICATION:
+    auth [project]      Authenticate using device flow
+    logout              Clear stored authentication
+    status              Check authentication status
+
 EXAMPLES:
+    codicent auth myproject
     codicent "What is Python?"
     codicent -t
     codicent "@mention Hello there"
     echo "Help me debug this" | codicent
 
 ENVIRONMENT:
-    CODICENT_TOKEN     Your Codicent API token (required)
+    CODICENT_TOKEN     Your Codicent API token (fallback if no cached auth)
 
 For more information, visit: https://github.com/izaxon/codicent-cli
 """
@@ -58,6 +65,8 @@ def validate_input(question):
     return True, None
 
 def main():
+    console = Console()
+    
     # Parse command line arguments
     if "-h" in sys.argv or "--help" in sys.argv:
         show_help()
@@ -77,22 +86,63 @@ def main():
         logging.getLogger().setLevel(logging.ERROR)
         sys.argv.remove("--quiet")
     
-    # Validate environment
-    token = os.getenv("CODICENT_TOKEN")
+    # Initialize auth handler
+    auth = CodicentAuth()
+    
+    # Handle authentication commands
+    if len(sys.argv) > 1 and sys.argv[1] in ["auth", "logout", "status"]:
+        command = sys.argv[1]
+        
+        if command == "auth":
+            project = sys.argv[2] if len(sys.argv) > 2 else None
+            token = auth.get_token(project=project, force_reauth=True)
+            if token:
+                console.print("[green]✅ Authentication successful![/green]")
+                return 0
+            else:
+                console.print("[red]❌ Authentication failed[/red]")
+                return 1
+        
+        elif command == "logout":
+            auth.logout()
+            return 0
+        
+        elif command == "status":
+            token = auth.get_cached_token()
+            if token:
+                console.print("[green]✅ Authenticated (cached token available)[/green]")
+                return 0
+            else:
+                env_token = os.getenv("CODICENT_TOKEN")
+                if env_token:
+                    console.print("[yellow]⚠ Using CODICENT_TOKEN environment variable[/yellow]")
+                    console.print("[dim]Consider running 'codicent auth' to use persistent authentication[/dim]")
+                    return 0
+                else:
+                    console.print("[red]❌ Not authenticated[/red]")
+                    console.print("[dim]Run 'codicent auth [project]' to authenticate[/dim]")
+                    return 1
+    
+    # Get authentication token
+    token = auth.get_cached_token()
     if not token:
-        print("Error: CODICENT_TOKEN environment variable is not set.")
-        print("Please set it with your Codicent API token:")
-        print("  export CODICENT_TOKEN='your_token_here'")
-        print("Or visit the Codicent documentation for setup instructions.")
-        return 1
+        # Fallback to environment variable
+        token = os.getenv("CODICENT_TOKEN")
+        if not token:
+            console.print("[red]❌ No authentication found.[/red]")
+            console.print("[dim]Run 'codicent auth [project]' to authenticate, or set CODICENT_TOKEN environment variable[/dim]")
+            return 1
+        else:
+            logger.info("Using CODICENT_TOKEN environment variable")
     
     # Initialize API client with error handling
     try:
         codicent = Codicent(token)
         logger.info("Codicent API client initialized successfully")
     except Exception as e:
-        print(f"Error: Failed to initialize Codicent API client: {e}")
+        console.print(f"[red]❌ Failed to initialize Codicent API client: {e}[/red]")
         logger.error(f"API client initialization failed: {e}")
+        console.print("[dim]Try running 'codicent auth' to re-authenticate[/dim]")
         return 1
     
     conversationId = None
@@ -108,12 +158,13 @@ def main():
     elif len(sys.argv) == 1:
         interactive = True
         
-    # Get input based on mode
+    # Get input based on mode (skip if we already handled auth commands)
+    question = ""
     if not interactive:
         if len(sys.argv) < 2:
             if sys.stdin.isatty():
-                print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent or codicent (equal to codicent -t)")
-                print("Use 'codicent --help' for more information.")
+                console.print("Usage: codicent <question> or codicent < chat.txt or cat chat.txt | codicent or codicent (equal to codicent -t)")
+                console.print("Use 'codicent --help' for more information.")
                 return 1
             try:
                 question = sys.stdin.read().strip()
@@ -129,8 +180,6 @@ def main():
                 question = sys.stdin.read().strip()
             except (KeyboardInterrupt, EOFError):
                 return 1
-        else: 
-            question = ""
 
     def handle_question(question):
         nonlocal conversationId

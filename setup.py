@@ -35,12 +35,13 @@ setup(
         'Programming Language :: Python :: 3.12',
     ],
     keywords='codicent cli api chat ai',
-    py_modules=['app'],
+    py_modules=['app', 'auth'],
     python_requires='>=3.6',
     install_requires=[
         'rich',
         'codicent-py',
-        'prompt_toolkit' 
+        'prompt_toolkit',
+        'requests'
     ],
     entry_points={
         'console_scripts': [
