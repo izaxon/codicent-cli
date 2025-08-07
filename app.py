@@ -32,12 +32,12 @@ OPTIONS:
     --quiet             Suppress non-essential output
 
 AUTHENTICATION:
-    auth [project]      Authenticate using device flow
+    auth                Authenticate using device flow (project selected during web auth)
     logout              Clear stored authentication
     status              Check authentication status
 
 EXAMPLES:
-    codicent auth myproject
+    codicent auth
     codicent "What is Python?"
     codicent -t
     codicent "@mention Hello there"
@@ -94,8 +94,8 @@ def main():
         command = sys.argv[1]
         
         if command == "auth":
-            project = sys.argv[2] if len(sys.argv) > 2 else None
-            token = auth.get_token(project=project, force_reauth=True)
+            # No project parameter needed - user selects project during web authorization
+            token = auth.get_token(force_reauth=True)
             if token:
                 console.print("[green]✅ Authentication successful![/green]")
                 return 0
@@ -120,7 +120,7 @@ def main():
                     return 0
                 else:
                     console.print("[red]❌ Not authenticated[/red]")
-                    console.print("[dim]Run 'codicent auth [project]' to authenticate[/dim]")
+                    console.print("[dim]Run 'codicent auth' to authenticate[/dim]")
                     return 1
     
     # Get authentication token
@@ -130,7 +130,7 @@ def main():
         token = os.getenv("CODICENT_TOKEN")
         if not token:
             console.print("[red]❌ No authentication found.[/red]")
-            console.print("[dim]Run 'codicent auth [project]' to authenticate, or set CODICENT_TOKEN environment variable[/dim]")
+            console.print("[dim]Run 'codicent auth' to authenticate, or set CODICENT_TOKEN environment variable[/dim]")
             return 1
         else:
             logger.info("Using CODICENT_TOKEN environment variable")

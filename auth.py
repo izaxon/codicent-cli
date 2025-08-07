@@ -68,7 +68,7 @@ class CodicentAuth:
         except IOError as e:
             logger.error(f"Could not clear token cache: {e}")
     
-    def device_flow_auth(self, project=None):
+    def device_flow_auth(self):
         """Perform device flow authentication."""
         try:
             # Step 1: Request device code
@@ -79,11 +79,7 @@ class CodicentAuth:
                 "Scope": "api"
             }
             
-            # Get project from user if not provided
-            if not project:
-                project = Prompt.ask("\n[cyan]Enter your Codicent project name[/cyan]")
-            
-            auth_data["Project"] = project
+            # Project is selected by user during web authorization, no need to include it here
             
             response = requests.post(
                 f"{self.base_url}/oauth/device_authorization",
@@ -230,7 +226,7 @@ class CodicentAuth:
             logger.error(f"Device flow auth unexpected error: {e}")
             return None
     
-    def get_token(self, project=None, force_reauth=False):
+    def get_token(self, force_reauth=False):
         """Get a valid token, either from cache or by performing device flow."""
         if not force_reauth:
             # Try to get cached token first
@@ -239,8 +235,8 @@ class CodicentAuth:
                 logger.info("Using cached token")
                 return cached_token
         
-        # Perform device flow authentication
-        return self.device_flow_auth(project)
+        # Perform device flow authentication (project selected during web auth)
+        return self.device_flow_auth()
     
     def logout(self):
         """Clear stored authentication."""
