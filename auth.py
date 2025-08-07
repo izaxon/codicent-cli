@@ -104,9 +104,14 @@ class CodicentAuth:
             
             # Step 2: Display user instructions
             self.console.print(f"\n[bold green]📱 To authorize this CLI application:[/bold green]")
-            self.console.print(f"[green]1. Visit:[/green] [bold blue]{auth_response['verificationUri']}[/bold blue]")
+            
+            # Ensure verification URI uses HTTPS
+            verification_uri = auth_response['verificationUri'].replace('http://', 'https://')
+            verification_uri_complete = auth_response['verificationUriComplete'].replace('http://', 'https://')
+            
+            self.console.print(f"[green]1. Visit:[/green] [bold blue]{verification_uri}[/bold blue]")
             self.console.print(f"[green]2. Enter the code:[/green] [bold yellow]{auth_response['userCode']}[/bold yellow]")
-            self.console.print(f"\n[green]Or visit directly:[/green] [bold blue]{auth_response['verificationUriComplete']}[/bold blue]")
+            self.console.print(f"\n[green]Or visit directly:[/green] [bold blue]{verification_uri_complete}[/bold blue]")
             self.console.print(f"\n[dim]⏳ Waiting for authorization (expires in {auth_response['expiresIn']} seconds)...[/dim]")
             
             # Step 3: Poll for token
@@ -148,6 +153,7 @@ class CodicentAuth:
                         # Handle different possible field names for access token
                         access_token = (token_data.get("AccessToken") or 
                                       token_data.get("access_token") or 
+                                      token_data.get("accessToken") or  # Added camelCase variant
                                       token_data.get("token"))
                         
                         if not access_token:
@@ -156,6 +162,7 @@ class CodicentAuth:
                         
                         expires_in_seconds = (token_data.get("ExpiresIn") or 
                                             token_data.get("expires_in") or 
+                                            token_data.get("expiresIn") or  # Added camelCase variant
                                             3600)
                         
                         self.console.print(f"\n[bold green]✅ Authorization successful![/bold green]")
@@ -173,8 +180,10 @@ class CodicentAuth:
                                                error_data.get("errorDescription") or 
                                                f"HTTP {token_response.status_code}")
                             
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.error(f"Token response error: {token_response.status_code} - {error_data}")
+                            # Always log the actual response when verbose is enabled
+                            if logger.isEnabledFor(logging.INFO):
+                                logger.info(f"Token response error: {error_type} - {error_description}")
+                                logger.info(f"Full error response: {error_data}")
                             
                             if error_type == "authorization_pending":
                                 self.console.print(".", end="", style="dim")
