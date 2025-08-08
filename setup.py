@@ -9,7 +9,7 @@ except FileNotFoundError:
 
 setup(
     name='codicent-cli',
-    version='0.4.6',
+    version='0.4.7',
     author='Johan Isaksson',
     author_email='johan@izaxon.com',
     description='Command-line interface for the Codicent API',
