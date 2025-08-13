@@ -1,4 +1,9 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+from setuptools.command.develop import develop
+import sys
+import subprocess
+import warnings
 
 # Read README for long description
 try:
@@ -6,6 +11,61 @@ try:
         long_description = fh.read()
 except FileNotFoundError:
     long_description = "Command-line interface for the Codicent API"
+
+def check_codicent_py():
+    """
+    Check if codicent-py can be imported, and provide helpful error messages if not.
+    This runs after installation to validate the setup.
+    """
+    try:
+        import codicentpy
+        print("✅ codicent-py imported successfully")
+        return True
+    except ImportError as e:
+        warnings.warn(
+            f"Warning: codicent-py could not be imported after installation: {e}\n"
+            f"If you encounter import errors, try installing manually:\n"
+            f"  pip install codicent-py\n"
+            f"Or from GitHub if PyPI version has issues:\n"
+            f"  pip install git+https://github.com/izaxon/codicent-py.git"
+        )
+        return False
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        # Run the check in a separate process to ensure it uses the installed packages
+        try:
+            subprocess.check_call([sys.executable, '-c', 
+                'try:\n'
+                '    import codicentpy\n'
+                '    print("✅ Codicent CLI installation successful - all dependencies available")\n'
+                'except ImportError as e:\n'
+                '    print(f"⚠️  Warning: codicent-py import failed: {e}")\n'
+                '    print("💡 If you encounter issues, try: pip install codicent-py")\n'
+                '    print("💡 Or from GitHub: pip install git+https://github.com/izaxon/codicent-py.git")'
+            ])
+        except subprocess.CalledProcessError:
+            print("⚠️  Could not verify codicent-py installation")
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        # Same check for development install
+        try:
+            subprocess.check_call([sys.executable, '-c', 
+                'try:\n'
+                '    import codicentpy\n'
+                '    print("✅ Codicent CLI development installation successful")\n'
+                'except ImportError as e:\n'
+                '    print(f"⚠️  Warning: codicent-py import failed: {e}")\n'
+                '    print("💡 For development, try: pip install codicent-py")\n'
+                '    print("💡 Or from GitHub: pip install git+https://github.com/izaxon/codicent-py.git")'
+            ])
+        except subprocess.CalledProcessError:
+            print("⚠️  Could not verify codicent-py installation")
 
 setup(
     name='codicent-cli',
@@ -38,14 +98,18 @@ setup(
     py_modules=['app', 'auth'],
     python_requires='>=3.6',
     install_requires=[
-        'rich',
-        'codicent-py',
-        'prompt_toolkit',
-        'requests'
+        'rich>=10.0.0',
+        'codicent-py>=1.0.0',
+        'prompt_toolkit>=3.0.0',
+        'requests>=2.20.0'
     ],
     entry_points={
         'console_scripts': [
             'codicent=app:main',
         ],
+    },
+    cmdclass={
+        'install': PostInstallCommand,
+        'develop': PostDevelopCommand,
     },
 )

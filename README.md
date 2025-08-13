@@ -22,9 +22,11 @@ Codicent CLI is a command-line interface for interacting with the Codicent API. 
 ### Quick Installation
 
 ```bash
-# Install from PyPI
-pip install codicent-py codicent-cli
+# Install from PyPI (recommended)
+pip install codicent-cli
 ```
+
+The `codicent-py` dependency will be installed automatically - no manual installation required!
 
 ### Development Installation
 
@@ -40,6 +42,8 @@ pip install codicent-py codicent-cli
    ```bash
    pip install -e .
    ```
+
+All dependencies including `codicent-py` are installed automatically!
 
 ### Direct Installation from GitHub
 
@@ -204,12 +208,14 @@ python -m pytest test_app.py -v
 
 3. **"Failed to initialize Codicent API client"**
    - Verify your token is valid
-   - Check if the codicent-py package is properly installed
+   - The codicent-py package should be installed automatically with codicent-cli
+   - If you still have issues, try: `pip install --upgrade codicent-py`
 
 ### Getting Help
 
 - Use `codicent --help` for usage information
 - Use `codicent --verbose` for detailed logging
+- Run `python validate_installation.py` to verify installation
 - Check the [Codicent documentation](https://github.com/izaxon/codicent-py) for API details
 
 ## License
