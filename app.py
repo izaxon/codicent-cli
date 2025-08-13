@@ -1,7 +1,17 @@
 import sys
 import os
 import logging
-from codicentpy import Codicent
+
+# Import codicentpy with helpful error handling
+try:
+    from codicentpy import Codicent
+except ImportError as e:
+    print("❌ Error: codicent-py package is not installed or not accessible.")
+    print("💡 To fix this, please run:")
+    print("   pip install codicent-py")
+    print(f"   Full error: {e}")
+    sys.exit(1)
+
 from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit import prompt

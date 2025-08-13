@@ -36,10 +36,7 @@ conversationId = response["id"]  # Updated after each chat reply
 
 ### Environment Setup
 ```bash
-# Install the git dependency first (required before setup.py)
-pip install git+https://github.com/izaxon/codicent-py.git
-
-# Install in development mode
+# Install in development mode - all dependencies installed automatically
 pip install -e .
 ```
 
@@ -61,8 +58,9 @@ echo "test" | codicent
 ## Project-Specific Conventions
 
 ### Dependencies Management
-- **Split approach**: `requirements.txt` includes git dependencies, `setup.py` excludes them
-- **Git dependency pattern**: External `codicentpy` package installed separately before setup
+- **Automatic installation**: All dependencies including `codicent-py` are installed automatically from PyPI
+- **Version constraints**: Setup includes minimum version requirements for stability
+- **Fallback support**: Enhanced error handling provides guidance if manual installation is needed
 - **Rich library**: Used for spinner animations and markdown rendering
 
 ### Error Handling Patterns
@@ -81,7 +79,7 @@ echo "test" | codicent
 ## Integration Points
 
 ### External Dependencies
-- **codicentpy**: Core API client (git dependency from `izaxon/codicent-py`)
+- **codicent-py**: Core API client (available on PyPI, installed automatically)
 - **rich**: Terminal formatting and animations
 - **Standard library**: Heavy reliance on `sys`, `os` for CLI operations
 
