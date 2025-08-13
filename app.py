@@ -7,9 +7,8 @@ try:
     from codicentpy import Codicent
 except ImportError as e:
     print("❌ Error: codicent-py package is not installed or not accessible.")
-    print("💡 To fix this, please run one of the following commands:")
+    print("💡 To fix this, please run:")
     print("   pip install codicent-py")
-    print("   pip install git+https://github.com/izaxon/codicent-py.git")
     print(f"   Full error: {e}")
     sys.exit(1)
 
