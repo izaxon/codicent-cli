@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import html
 from codicentpy import Codicent
 from rich.console import Console
 from rich.markdown import Markdown
@@ -63,6 +64,21 @@ def validate_input(question):
         return False, "Question too long (max 10,000 characters)"
     
     return True, None
+
+def preprocess_input(text):
+    """Preprocess user input to handle HTML entities and other formatting issues.
+    
+    This function addresses the character encoding issues reported in user feedback:
+    - Decodes HTML entities like &amp; to &
+    - Handles other common HTML entities that might appear in user input
+    """
+    if not text:
+        return text
+    
+    # Decode HTML entities (fixes &amp;, &lt;, &gt;, &quot;, etc.)
+    decoded_text = html.unescape(text)
+    
+    return decoded_text
 
 def main():
     console = Console()
@@ -184,8 +200,11 @@ def main():
     def handle_question(question):
         nonlocal conversationId
         
+        # Preprocess input to handle HTML entities and formatting issues
+        processed_question = preprocess_input(question)
+        
         # Validate input
-        is_valid, error_msg = validate_input(question)
+        is_valid, error_msg = validate_input(processed_question)
         if not is_valid:
             print(f"Error: {error_msg}")
             logger.warning(f"Invalid input: {error_msg}")
@@ -194,15 +213,15 @@ def main():
         console = Console()
         
         try:
-            if question.strip().startswith("@"):
+            if processed_question.strip().startswith("@"):
                 logger.info("Sending message to Codicent API")
                 with console.status("[dim]Sending message...[/dim]", spinner="dots"):
-                    response = codicent.post_message(question, type="info")
+                    response = codicent.post_message(processed_question, type="info")
                 console.print("[green]✅ Message posted successfully.[/green]")
             else:
                 logger.info("Sending chat reply to Codicent API")
                 with console.status("[dim]🤔 Thinking...[/dim]", spinner="dots"):
-                    response = codicent.post_chat_reply(question, conversationId)
+                    response = codicent.post_chat_reply(processed_question, conversationId)
                 conversationId = response["id"]
                 logger.info(f"Updated conversation ID: {conversationId}")
                 

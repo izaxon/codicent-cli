@@ -257,6 +257,55 @@ class TestCodicentCLI(unittest.TestCase):
             # Verify logging level was changed to ERROR
             mock_logger.setLevel.assert_called_with(logging.ERROR)
 
+    def test_preprocess_input_html_entities(self):
+        """Test that HTML entities are properly decoded in preprocess_input."""
+        test_cases = [
+            ("Test with &amp; character", "Test with & character"),
+            ("HTML tags: &lt;div&gt;", "HTML tags: <div>"),
+            ("Quotes: &quot;hello&quot;", "Quotes: \"hello\""),
+            ("Mixed &amp; &lt; entities", "Mixed & < entities"),
+            ("No entities", "No entities"),  # Should remain unchanged
+            ("", ""),  # Empty string
+        ]
+        
+        for input_text, expected_output in test_cases:
+            with self.subTest(input=input_text):
+                result = app.preprocess_input(input_text)
+                self.assertEqual(result, expected_output)
+
+    def test_preprocess_input_none(self):
+        """Test that preprocess_input handles None input gracefully."""
+        result = app.preprocess_input(None)
+        self.assertIsNone(result)
+
+    @patch('app.Codicent')
+    def test_character_processing_integration(self, mock_codicent_class):
+        """Test that character processing works end-to-end in main()."""
+        # Test the specific issue reported: &amp; characters
+        sys.argv = ['codicent', 'Test message with &amp; character']
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        mock_codicent = MagicMock()
+        mock_codicent_class.return_value = mock_codicent
+        mock_codicent.post_chat_reply.return_value = {
+            'id': 'test_id',
+            'content': 'Test response'
+        }
+        
+        with patch('sys.stdout', new=StringIO()):
+            result = app.main()
+            
+        # Verify the API was called with the processed (decoded) message
+        self.assertEqual(result, 0)
+        mock_codicent.post_chat_reply.assert_called_once()
+        
+        # Check the actual message sent to the API
+        call_args = mock_codicent.post_chat_reply.call_args
+        actual_message = call_args[0][0]  # First positional argument
+        
+        # The HTML entity should be decoded
+        self.assertEqual(actual_message, 'Test message with & character')
+
 
 class TestInteractiveMode(unittest.TestCase):
     """Test cases specifically for interactive mode."""
