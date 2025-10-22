@@ -2,6 +2,9 @@ import sys
 import os
 import logging
 import glob
+import requests
+import base64
+import json
 from codicentpy import Codicent
 from rich.console import Console
 from rich.markdown import Markdown
@@ -165,6 +168,17 @@ def main():
             console.print("[dim]Try running 'codicent auth' to re-authenticate[/dim]")
             return 1
         
+        # Extract project from JWT token
+        try:
+            payload = token.split(".")[1]
+            payload += '=' * (-len(payload) % 4)
+            decoded_payload = base64.urlsafe_b64decode(payload).decode('utf-8')
+            jwt_data = json.loads(decoded_payload)
+            project = jwt_data["project"]
+        except Exception as e:
+            console.print(f"[red]❌ Failed to extract project from token: {e}[/red]")
+            return 1
+        
         # Collect all files from patterns
         file_patterns = sys.argv[2:]
         files_to_upload = []
@@ -201,11 +215,18 @@ def main():
                 with console.status(f"[dim]Uploading {filename}...[/dim]", spinner="dots"):
                     # Upload the file
                     with open(filepath, 'rb') as file:
-                        file_guid = codicent.upload(file)
-                    
+                        url = f"{codicent.base_url}app/UploadFile"
+                        files = {"file": file}
+                        params = {"filename": filename}
+                        response = requests.post(url, files=files, params=params, verify=codicent.verify_https)
+                        if response.ok:
+                            file_guid = response.json()
+                        else:
+                            raise Exception(f"Upload failed: {response.status_code} - {response.text}")
+
                     # Post a message with the file reference
                     # Get project name from first @ mention if available, otherwise use @myproject
-                    message = f"@myproject #index #summarize #file:{file_guid}"
+                    message = f"@{project} #index #summarize #file:{file_guid}"
                     codicent.post_message(message, type="info")
                 
                 console.print(f"[green]✅ Uploaded: {filename} (File ID: {file_guid})[/green]")
