@@ -314,6 +314,152 @@ class TestInteractiveMode(unittest.TestCase):
             mock_codicent.post_chat_reply.assert_not_called()
 
 
+class TestUploadCommand(unittest.TestCase):
+    """Test cases for file upload functionality."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.original_argv = sys.argv.copy()
+        self.original_environ = os.environ.copy()
+
+    def tearDown(self):
+        """Clean up after tests."""
+        sys.argv = self.original_argv
+        os.environ.clear()
+        os.environ.update(self.original_environ)
+
+    @patch('sys.argv', ['codicent', 'upload'])
+    def test_upload_no_files(self):
+        """Test upload command with no files specified."""
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            result = app.main()
+            output = fake_out.getvalue()
+            self.assertEqual(result, 1)
+            self.assertIn("No files specified", output)
+
+    @patch('app.Codicent')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'test file content')
+    @patch('os.path.isfile')
+    @patch('glob.glob')
+    def test_upload_single_file(self, mock_glob, mock_isfile, mock_file, mock_codicent_class):
+        """Test uploading a single file."""
+        sys.argv = ['codicent', 'upload', 'test.txt']
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        # Mock glob to return the file
+        mock_glob.return_value = ['test.txt']
+        mock_isfile.return_value = True
+        
+        # Mock Codicent API
+        mock_codicent = MagicMock()
+        mock_codicent_class.return_value = mock_codicent
+        mock_codicent.upload.return_value = 'test-guid-123'
+        mock_codicent.post_message.return_value = {'status': 'success'}
+        
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            result = app.main()
+            output = fake_out.getvalue()
+            self.assertEqual(result, 0)
+            self.assertIn("test-guid-123", output)
+            self.assertIn("Uploaded: 1", output)
+            
+            # Verify API calls
+            mock_codicent.upload.assert_called_once()
+            mock_codicent.post_message.assert_called_once()
+            
+            # Verify message format
+            call_args = mock_codicent.post_message.call_args
+            message = call_args[0][0]
+            self.assertIn("@myproject", message)
+            self.assertIn("#index", message)
+            self.assertIn("#summarize", message)
+            self.assertIn("#file:test-guid-123", message)
+
+    @patch('app.Codicent')
+    @patch('builtins.open', new_callable=mock_open, read_data=b'test file content')
+    @patch('os.path.isfile')
+    @patch('glob.glob')
+    def test_upload_multiple_files_with_glob(self, mock_glob, mock_isfile, mock_file, mock_codicent_class):
+        """Test uploading multiple files using glob patterns."""
+        sys.argv = ['codicent', 'upload', '*.txt', '*.log']
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        # Mock glob to return multiple files
+        def glob_side_effect(pattern):
+            if pattern == '*.txt':
+                return ['file1.txt', 'file2.txt']
+            elif pattern == '*.log':
+                return ['error.log']
+            return []
+        
+        mock_glob.side_effect = glob_side_effect
+        mock_isfile.return_value = True
+        
+        # Mock Codicent API
+        mock_codicent = MagicMock()
+        mock_codicent_class.return_value = mock_codicent
+        mock_codicent.upload.side_effect = ['guid-1', 'guid-2', 'guid-3']
+        mock_codicent.post_message.return_value = {'status': 'success'}
+        
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            result = app.main()
+            output = fake_out.getvalue()
+            self.assertEqual(result, 0)
+            self.assertIn("Uploaded: 3", output)
+            
+            # Verify upload was called 3 times
+            self.assertEqual(mock_codicent.upload.call_count, 3)
+            self.assertEqual(mock_codicent.post_message.call_count, 3)
+
+    @patch('app.Codicent')
+    @patch('glob.glob')
+    def test_upload_no_matching_files(self, mock_glob, mock_codicent_class):
+        """Test upload when no files match the pattern."""
+        sys.argv = ['codicent', 'upload', '*.xyz']
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        # Mock glob to return no files
+        mock_glob.return_value = []
+        
+        # Mock Codicent API
+        mock_codicent = MagicMock()
+        mock_codicent_class.return_value = mock_codicent
+        
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            result = app.main()
+            output = fake_out.getvalue()
+            self.assertEqual(result, 1)
+            self.assertIn("No files found", output)
+
+    @patch('app.Codicent')
+    @patch('builtins.open')
+    @patch('os.path.isfile')
+    @patch('glob.glob')
+    def test_upload_file_error(self, mock_glob, mock_isfile, mock_file, mock_codicent_class):
+        """Test handling of file upload errors."""
+        sys.argv = ['codicent', 'upload', 'test.txt']
+        os.environ['CODICENT_TOKEN'] = 'test_token'
+        
+        # Mock glob to return the file
+        mock_glob.return_value = ['test.txt']
+        mock_isfile.return_value = True
+        
+        # Mock file open to raise an exception
+        mock_file.side_effect = FileNotFoundError("File not found")
+        
+        # Mock Codicent API
+        mock_codicent = MagicMock()
+        mock_codicent_class.return_value = mock_codicent
+        
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            result = app.main()
+            output = fake_out.getvalue()
+            self.assertEqual(result, 1)
+            self.assertIn("Failed: 1", output)
+
+
 if __name__ == '__main__':
     # Run the tests
     unittest.main()
