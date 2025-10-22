@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import glob
 from codicentpy import Codicent
 from rich.console import Console
 from rich.markdown import Markdown
@@ -23,6 +24,7 @@ USAGE:
     codicent [OPTIONS] [QUESTION]
     codicent [OPTIONS] < file.txt
     echo "question" | codicent [OPTIONS]
+    codicent upload <file_pattern> [<file_pattern> ...]
 
 OPTIONS:
     -t, --interactive    Start interactive chat mode
@@ -36,11 +38,21 @@ AUTHENTICATION:
     logout              Clear stored authentication
     status              Check authentication status
 
+FILE UPLOAD:
+    upload              Upload files and post messages with tags
+    
+    Example:
+        codicent upload file.txt *.log
+        
+    This uploads the files and posts a message for each file with:
+        @project #index #summarize #file:FILE_GUID
+
 EXAMPLES:
     codicent auth
     codicent "What is Python?"
     codicent -t
     codicent "@mention Hello there"
+    codicent upload document.txt *.log
     echo "Help me debug this" | codicent
 
 ENVIRONMENT:
@@ -122,6 +134,102 @@ def main():
                     console.print("[red]❌ Not authenticated[/red]")
                     console.print("[dim]Run 'codicent auth' to authenticate[/dim]")
                     return 1
+    
+    # Handle upload command
+    if len(sys.argv) > 1 and sys.argv[1] == "upload":
+        if len(sys.argv) < 3:
+            console.print("[red]❌ Error: No files specified for upload[/red]")
+            console.print("[dim]Usage: codicent upload <file_pattern> [<file_pattern> ...][/dim]")
+            console.print("[dim]Example: codicent upload file.txt *.log[/dim]")
+            return 1
+        
+        # Get authentication token
+        token = auth.get_cached_token()
+        if not token:
+            # Fallback to environment variable
+            token = os.getenv("CODICENT_TOKEN")
+            if not token:
+                console.print("[red]❌ No authentication found.[/red]")
+                console.print("[dim]Run 'codicent auth' to authenticate, or set CODICENT_TOKEN environment variable[/dim]")
+                return 1
+            else:
+                logger.info("Using CODICENT_TOKEN environment variable")
+        
+        # Initialize API client with error handling
+        try:
+            codicent = Codicent(token)
+            logger.info("Codicent API client initialized successfully")
+        except Exception as e:
+            console.print(f"[red]❌ Failed to initialize Codicent API client: {e}[/red]")
+            logger.error(f"API client initialization failed: {e}")
+            console.print("[dim]Try running 'codicent auth' to re-authenticate[/dim]")
+            return 1
+        
+        # Collect all files from patterns
+        file_patterns = sys.argv[2:]
+        files_to_upload = []
+        
+        for pattern in file_patterns:
+            matched_files = glob.glob(pattern)
+            if matched_files:
+                files_to_upload.extend(matched_files)
+            else:
+                # If no glob match, check if it's a direct file path
+                if os.path.isfile(pattern):
+                    files_to_upload.append(pattern)
+                else:
+                    console.print(f"[yellow]⚠ Warning: No files found matching pattern '{pattern}'[/yellow]")
+        
+        if not files_to_upload:
+            console.print("[red]❌ Error: No files found to upload[/red]")
+            return 1
+        
+        # Remove duplicates while preserving order
+        files_to_upload = list(dict.fromkeys(files_to_upload))
+        
+        console.print(f"[dim]Found {len(files_to_upload)} file(s) to upload[/dim]")
+        
+        # Upload each file and post a message
+        uploaded_count = 0
+        failed_count = 0
+        
+        for filepath in files_to_upload:
+            try:
+                filename = os.path.basename(filepath)
+                console.print(f"[dim]Uploading {filename}...[/dim]")
+                
+                with console.status(f"[dim]Uploading {filename}...[/dim]", spinner="dots"):
+                    # Upload the file
+                    with open(filepath, 'rb') as file:
+                        file_guid = codicent.upload(file)
+                    
+                    # Post a message with the file reference
+                    # Get project name from first @ mention if available, otherwise use @myproject
+                    message = f"@myproject #index #summarize #file:{file_guid}"
+                    codicent.post_message(message, type="info")
+                
+                console.print(f"[green]✅ Uploaded: {filename} (File ID: {file_guid})[/green]")
+                uploaded_count += 1
+                
+            except FileNotFoundError:
+                console.print(f"[red]❌ File not found: {filepath}[/red]")
+                failed_count += 1
+            except PermissionError:
+                console.print(f"[red]❌ Permission denied: {filepath}[/red]")
+                failed_count += 1
+            except Exception as e:
+                console.print(f"[red]❌ Failed to upload {filename}: {e}[/red]")
+                logger.error(f"Upload failed for {filepath}: {e}")
+                failed_count += 1
+        
+        # Summary
+        console.print()
+        console.print(f"[bold]Upload Summary:[/bold]")
+        console.print(f"  [green]✅ Uploaded: {uploaded_count}[/green]")
+        if failed_count > 0:
+            console.print(f"  [red]❌ Failed: {failed_count}[/red]")
+        
+        return 0 if failed_count == 0 else 1
     
     # Get authentication token
     token = auth.get_cached_token()
