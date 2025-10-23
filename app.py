@@ -67,7 +67,7 @@ For more information, visit: https://github.com/izaxon/codicent-cli
 
 def show_version():
     """Display version information."""
-    print("Codicent CLI v0.4.8")
+    print("Codicent CLI v0.5.0")
 
 def validate_input(question):
     """Validate user input."""
